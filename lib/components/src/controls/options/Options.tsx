@@ -28,25 +28,10 @@ const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
   return options;
 };
 
-const Controls: Record<string, FC> = {
-  check: CheckboxControl,
-  'inline-check': CheckboxControl,
-  radio: RadioControl,
-  'inline-radio': RadioControl,
-  select: SelectControl,
-  'multi-select': SelectControl,
-};
-
 export type OptionsProps = ControlProps<OptionsSelection> & OptionsConfig;
 export const OptionsControl: FC<OptionsProps> = (props) => {
   const { type = 'select', options, labels, argType } = props;
-  const normalized = {
-    ...props,
-    options: normalizeOptions(options || argType.options, labels),
-    isInline: type.includes('inline'),
-    isMulti: type.includes('multi'),
-  };
-
+  const normalized = { ...props, options: normalizeOptions(options || argType.options, labels) };
   if (options) {
     once.warn(dedent`
       'control.options' is deprecated and will be removed in Storybook 7.0. Define 'options' directly on the argType instead, and use 'control.labels' for custom labels.
@@ -54,10 +39,17 @@ export const OptionsControl: FC<OptionsProps> = (props) => {
       More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecated-controloptions
     `);
   }
-
-  const Control = Controls[type];
-  if (Control) {
-    return <Control {...normalized} />;
+  switch (type) {
+    case 'check':
+    case 'inline-check':
+      return <CheckboxControl {...normalized} isInline={type === 'inline-check'} />;
+    case 'radio':
+    case 'inline-radio':
+      return <RadioControl {...normalized} isInline={type === 'inline-radio'} />;
+    case 'select':
+    case 'multi-select':
+      return <SelectControl {...normalized} isMulti={type === 'multi-select'} />;
+    default:
+      throw new Error(`Unknown options type: ${type}`);
   }
-  throw new Error(`Unknown options type: ${type}`);
 };
